@@ -1,0 +1,88 @@
+{
+  "actorSpecification": 1,
+  "fields": {},
+  "views": {
+    "overview": {
+      "title": "Overview",
+      "transformation": {
+        "fields": [
+          "id",
+          "title",
+          "description_html",
+          "description_text",
+          "organizationName",
+          "locationCity",
+          "locationState",
+          "employmentType",
+          "shiftType",
+          "payLow",
+          "payHigh",
+          "payType",
+          "postedAt",
+          "url"
+        ]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "id": {
+            "label": "Job ID",
+            "format": "text"
+          },
+          "title": {
+            "label": "Job Title",
+            "format": "text"
+          },
+          "description_html": {
+            "label": "Description HTML",
+            "format": "text"
+          },
+          "description_text": {
+            "label": "Description Text",
+            "format": "text"
+          },
+          "organizationName": {
+            "label": "Organization",
+            "format": "text"
+          },
+          "locationCity": {
+            "label": "City",
+            "format": "text"
+          },
+          "locationState": {
+            "label": "State",
+            "format": "text"
+          },
+          "employmentType": {
+            "label": "Employment",
+            "format": "text"
+          },
+          "shiftType": {
+            "label": "Shift",
+            "format": "text"
+          },
+          "payLow": {
+            "label": "Pay Low",
+            "format": "number"
+          },
+          "payHigh": {
+            "label": "Pay High",
+            "format": "number"
+          },
+          "payType": {
+            "label": "Pay Type",
+            "format": "text"
+          },
+          "postedAt": {
+            "label": "Posted",
+            "format": "text"
+          },
+          "url": {
+            "label": "URL",
+            "format": "link"
+          }
+        }
+      }
+    }
+  }
+}

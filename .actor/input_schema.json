@@ -1,0 +1,58 @@
+{
+  "title": "Nurse.com Jobs Scraper",
+  "description": "Scrape nursing jobs from Nurse.com using keyword/location filters with automatic pagination.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "startUrl": {
+      "title": "Start URL",
+      "type": "string",
+      "description": "Nurse.com browse URL, for example https://www.nurse.com/jobs/browse/.",
+      "editor": "textfield",
+      "prefill": "https://www.nurse.com/jobs/browse/"
+    },
+    "keyword": {
+      "title": "Keyword",
+      "type": "string",
+      "description": "Search keyword, specialty, or job title.",
+      "editor": "textfield",
+      "prefill": "icu"
+    },
+    "location": {
+      "title": "Location",
+      "type": "string",
+      "description": "City, state, or zip code.",
+      "editor": "textfield",
+      "prefill": "New York"
+    },
+    "results_wanted": {
+      "title": "Maximum number of jobs",
+      "type": "integer",
+      "description": "Maximum number of jobs to save.",
+      "minimum": 1,
+      "default": 20,
+      "prefill": 20,
+      "editor": "number"
+    },
+    "max_pages": {
+      "title": "Maximum number of pages",
+      "type": "integer",
+      "description": "Safety cap for API pages to request.",
+      "minimum": 1,
+      "editor": "number",
+      "default": 20,
+      "prefill": 20
+    },
+    "proxyConfiguration": {
+      "title": "Proxy configuration",
+      "type": "object",
+      "description": "Optional proxy settings for reliable requests.",
+      "editor": "proxy",
+      "default": {
+        "useApifyProxy": false
+      }
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

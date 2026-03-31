@@ -1,0 +1,22 @@
+{
+  "name": "nurse-com-jobs-scraper",
+  "version": "1.0.0",
+  "description": "Nurse.com jobs scraper with API-based extraction.",
+  "type": "module",
+  "dependencies": {
+    "apify": "^3.7.0",
+    "crawlee": "^3.16.0",
+    "cheerio": "^1.2.0",
+    "playwright": "1.58.2"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "test": "echo \"Error: oops, the Actor has no tests yet, sad!\" && exit 1"
+  },
+  "author": "Shahid Irfan",
+  "license": "ISC"
+}
