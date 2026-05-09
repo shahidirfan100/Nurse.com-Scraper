@@ -1,8 +1,29 @@
-FROM apify/actor-node-playwright-firefox:22-1.58.2
+FROM apify/actor-node-playwright-firefox:24-1.59.1
 
-COPY package*.json ./
-RUN npm install --omit=dev
+# Check preinstalled packages
+RUN npm ls @crawlee/core apify puppeteer playwright
 
-COPY . ./
+# Copy just package.json and package-lock.json
+# to speed up the build using Docker layer cache.
+COPY --chown=myuser:myuser package*.json ./
 
-CMD ["npm", "start", "--silent"]
+# Install NPM packages, skip optional and development dependencies to
+# keep the image small. Avoid logging too much and print the dependency
+# tree for debugging
+RUN npm --quiet set progress=false \
+    && npm install --omit=dev --omit=optional \
+    && echo "Installed NPM packages:" \
+    && (npm list --omit=dev --all || true) \
+    && echo "Node.js version:" \
+    && node --version \
+    && echo "NPM version:" \
+    && npm --version \
+    && rm -r ~/.npm
+
+# Next, copy the remaining files and directories with the source code.
+# Since we do this after NPM install, quick build will be really fast
+# for most source file changes.
+COPY --chown=myuser:myuser . ./
+
+# Run the image.
+CMD ["node", "src/main.js"]

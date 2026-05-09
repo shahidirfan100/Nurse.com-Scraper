@@ -1,13 +1,13 @@
 {
   "name": "nurse-com-jobs-scraper",
-  "version": "1.0.0",
+  "version": "1.0",
   "description": "Nurse.com jobs scraper with API-based extraction.",
   "type": "module",
   "dependencies": {
     "apify": "^3.7.0",
     "crawlee": "^3.16.0",
     "cheerio": "^1.2.0",
-    "playwright": "1.58.2"
+    "playwright": "1.59.1"
   },
   "scripts": {
     "start": "node src/main.js",
