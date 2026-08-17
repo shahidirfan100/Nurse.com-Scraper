@@ -170,6 +170,14 @@ The following is one representative dataset item. Optional fields are absent whe
 }
 ```
 
+## Tips for Best Results
+
+- **Test focused searches first** - Start with one keyword, one location, and a small `results_wanted` value before expanding the run.
+- **Match the page limit to the result limit** - Increase `max_pages` when you request more jobs, while keeping both limits appropriate for the search.
+- **Use a saved browse URL for repeatable searches** - A Nurse.com browse URL can preserve a page, sort value, and JSON filter that you want to reuse.
+- **Review optional fields before analysis** - Pay, qualifications, organization details, and dates may be absent from individual listings.
+- **Check the dataset preview** - Confirm titles, locations, descriptions, and URLs before scheduling larger runs or exporting the data.
+
 ## Data-quality behavior and limitations
 
 - Empty strings, null values, empty arrays, and empty nested objects are removed from each dataset item.
