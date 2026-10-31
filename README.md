@@ -1,233 +1,270 @@
 ## What does Nurse.com Jobs Scraper do?
 
-Nurse.com Jobs Scraper collects structured nursing job listings from Nurse.com for recruiting research, healthcare workforce analysis, salary comparisons, and job monitoring. Provide a Nurse.com jobs browse URL, optionally add a keyword and location, and receive one dataset item per job with title, description, employer, location, pay values, employment details, qualifications, timestamps, and a public job URL.
+Nurse.com Jobs Scraper collects nursing job listings from Nurse.com and saves one dataset item per job. Start with a keyword such as `icu`, add a city or state, or point the Actor at a Nurse.com jobs browse URL. The dataset includes the job title, employer, location, pay values, employment type, shift, qualifications, description, and public listing URL.
 
-You can run it from the Apify Console with form inputs or send the same fields as JSON through an Apify API or CLI workflow. Results are stored in an Apify dataset and can be downloaded or passed to downstream tools.
+The Actor is built for recruiting research, healthcare workforce analysis, salary review, and scheduled job monitoring. Run it from the Apify Console with the form inputs, or send the same fields through the Apify API, CLI, or a schedule.
 
 ## Why use Nurse.com Jobs Scraper?
 
-- **Nursing labor market research** - Compare the roles, locations, employers, shifts, and requirements appearing on Nurse.com.
-- **Recruiting intelligence** - Build a structured view of nursing demand by keyword, city, state, or ZIP code.
-- **Compensation analysis** - Review the numeric pay range fields together with the source `payType` value.
-- **Job aggregation** - Use public job URLs, descriptions, organization data, and timestamps in an internal job dataset.
-- **Repeatable collection** - Control the result count and page limit for small checks or scheduled monitoring runs.
-- **Export-ready data** - Download the dataset as JSON, CSV, Excel, XML, or another format supported by Apify.
+- **Nursing labor market research** - Compare open roles by specialty, employer, city, state, and shift.
+- **Recruiting intelligence** - Build a structured view of nursing demand for a region or a single search term.
+- **Compensation review** - Keep the source pay range and pay type next to each job without conversion.
+- **Job board monitoring** - Schedule repeat runs to find new listings and track when existing listings change.
+- **Export-ready output** - Download the dataset as JSON, CSV, Excel, or XML, or connect it to another Apify integration.
 
-The Actor does not convert pay values, rewrite job titles, or fill missing listing information. It preserves the values returned by Nurse.com and records the search context used for each item.
+The Actor keeps the values returned by Nurse.com. It does not rewrite titles, convert pay amounts, or fill fields the source leaves empty.
 
 ## What data can you extract from Nurse.com?
 
-Each saved dataset item represents one Nurse.com job listing. Fields are included only when a value is available.
+Each dataset item is one job listing. Fields appear only when Nurse.com provides a value.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | String | Nurse.com job identifier. |
-| `slug` | String | Job slug used to build the public listing URL. |
-| `url` | String | Public Nurse.com URL for the job. |
-| `title` | String | Job title. |
-| `description_html` | String | Job description in the source HTML format. |
-| `description_text` | String | Clean text version of the description, with markup removed. |
-| `status` | String | Status value returned by Nurse.com. |
-| `employmentType` | String | Employment type, such as `FULL_TIME`, when provided. |
-| `shiftType` | String | Shift type, such as `DAY`, when provided. |
-| `minYearsExp` | Number | Minimum experience value returned by the listing. |
-| `hasExternalApplicationUrl` | Boolean | Indicates whether the listing has an external application URL. |
-| `displayCompanyName` | String | Company name displayed by the listing, when available. |
-| `payLow` | Number | Lower numeric pay value returned by Nurse.com. |
-| `payHigh` | Number | Upper numeric pay value returned by Nurse.com. |
-| `payType` | String | Pay period or type returned by Nurse.com, such as `ANNUAL`. |
-| `postedAt` | String | Original posting timestamp, when available. |
-| `updatedAt` | String | Last update timestamp, when available. |
-| `createdAt` | String | Creation timestamp, when available. |
-| `expiresAt` | String | Expiration timestamp, when available. |
-| `locationCity` | String | Listing city. |
-| `locationState` | String | Listing state. |
-| `organizationName` | String | Employer or organization name. |
-| `location` | Object | Nested location data: `city`, `state`, `zipCode`, `lat`, and `lon`. |
-| `organization` | Object | Nested organization data: `id`, `name`, and `premium`. |
-| `qualifications` | Array | Qualification entries with `name`, `details`, and `type`. |
-| `query` | Object | Collection context with `keyword`, `location`, and zero-based `page`. |
-| `source` | String | Source identifier, currently `nurse.com`. |
-| `crawledAt` | String | ISO timestamp for when the item was collected. |
+| Field                       | Type    | Description                                             |
+| --------------------------- | ------- | ------------------------------------------------------- |
+| `id`                        | String  | Nurse.com job identifier.                               |
+| `slug`                      | String  | Job slug used in the public listing URL.                |
+| `url`                       | String  | Public Nurse.com URL for the job.                       |
+| `title`                     | String  | Job title.                                              |
+| `description_html`          | String  | Job description in the source HTML format.              |
+| `description_text`          | String  | Description with markup removed and line breaks kept.   |
+| `status`                    | String  | Listing status, such as `ACTIVE`.                       |
+| `employmentType`            | String  | Employment type, such as `FULL_TIME`.                   |
+| `shiftType`                 | String  | Shift value, such as `DAY`.                             |
+| `minYearsExp`               | Number  | Minimum experience value from the listing.              |
+| `hasExternalApplicationUrl` | Boolean | Whether the listing uses an external application URL.   |
+| `displayCompanyName`        | String  | Company name displayed by the listing, when present.    |
+| `payLow`                    | Number  | Lower pay value exactly as returned by Nurse.com.       |
+| `payHigh`                   | Number  | Upper pay value exactly as returned by Nurse.com.       |
+| `payType`                   | String  | Pay period or type, such as `HOURLY` or `ANNUAL`.       |
+| `postedAt`                  | String  | Original posting timestamp.                             |
+| `updatedAt`                 | String  | Last update timestamp.                                  |
+| `createdAt`                 | String  | Creation timestamp.                                     |
+| `expiresAt`                 | String  | Expiration timestamp.                                   |
+| `locationCity`              | String  | Listing city.                                           |
+| `locationState`             | String  | Listing state.                                          |
+| `organizationName`          | String  | Employer or organization name.                          |
+| `location`                  | Object  | Nested city, state, ZIP code, latitude, and longitude.  |
+| `organization`              | Object  | Nested organization ID, name, and premium flag.         |
+| `qualifications`            | Array   | Qualification entries with name, details, and type.     |
+| `query`                     | Object  | Search context with keyword, location, and page number. |
+| `source`                    | String  | Source identifier, currently `nurse.com`.               |
+| `crawledAt`                 | String  | ISO timestamp for when the item was collected.          |
 
-Pay fields are kept as numeric values exactly as returned by Nurse.com. Use `payType` and the original listing to interpret the unit or period; the Actor does not perform currency conversion or normalize the numeric amount.
+Pay values stay as numeric values. Use `payType` to interpret the period, and check the original listing before reporting a salary range publicly.
 
 ## How to use Nurse.com Jobs Scraper
 
 1. Open the Actor in Apify Console.
-2. Enter a Nurse.com jobs browse URL, or keep the default browse URL.
-3. Optionally enter a keyword such as `icu` and a location such as `New York`.
-4. Set `results_wanted` and `max_pages` for the size of the run.
-5. Run the Actor and open the dataset preview.
-6. Export the results or connect the dataset to your recruiting, research, or reporting workflow.
+2. Enter a keyword, a location, or a Nurse.com jobs browse URL.
+3. Set `results_wanted` and `max_pages` for the run size.
+4. Start the Actor and open the dataset preview.
+5. Export the dataset or connect it to your reporting workflow.
 
-The default collection page contains up to 25 jobs. The Actor continues through subsequent pages until it reaches `results_wanted`, reaches `max_pages`, or Nurse.com returns no more jobs. The page size is fixed by the Actor and is not an input option.
+The Actor requests 25 jobs per page. It stops when it reaches `results_wanted`, reaches `max_pages`, reaches the last available page, or receives an empty page.
 
 ## Supported input methods
 
-You can provide inputs in either of these ways:
+You can provide input in two ways:
 
-- **Apify Console form** - Enter the fields in the Actor's input form.
-- **JSON input** - Send the same fields when starting the Actor through an Apify API, CLI, schedule, or another Apify integration.
+- **Apify Console form** - Fill in the fields on the Actor page and start the run.
+- **JSON input** - Send the same fields through an Apify API call, CLI command, schedule, or another Apify integration.
 
-The main search can be expressed through `keyword` and `location`, or through a Nurse.com browse URL in `startUrl`. If the URL contains supported browse state, the Actor reads the page number, sort property, and JSON filter in the URL. Explicit `keyword` and `location` values take precedence over the corresponding search and location values from that URL.
+`keyword` and `location` take precedence over `startUrl`. If either one is present, the Actor searches with those values and ignores the URL. If both are empty, the Actor uses `startUrl`, which defaults to the Nurse.com browse page.
 
 ## Input Parameters
 
-| Parameter | Type | Required | Default or prefill | Description |
-|-----------|------|----------|--------------------|-------------|
-| `startUrl` | String | No | `https://www.nurse.com/jobs/browse/` | Nurse.com jobs browse URL. A page path such as `/page-2/` can start collection from that zero-based page number. |
-| `keyword` | String | No | Prefill: `icu` | Search keyword, nursing specialty, or job title. Empty at runtime if not supplied. |
-| `location` | String | No | Prefill: `New York` | City, state, or ZIP code filter. Empty at runtime if not supplied. |
-| `results_wanted` | Integer | No | `20` | Maximum number of unique job items to save. Must be at least 1. |
-| `max_pages` | Integer | No | `20` | Maximum number of result pages to request. Must be at least 1. |
-| `proxyConfiguration` | Object | No | `{"useApifyProxy": false}` | Optional Apify proxy settings for request routing. |
+| Parameter            | Type    | Required | Default                              | Description                                                                                                                                                |
+| -------------------- | ------- | -------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `startUrl`           | String  | No       | `https://www.nurse.com/jobs/browse/` | Nurse.com jobs browse URL. A path such as `/page-2/` starts from that page. A `q` query value is read as a JSON filter, and `s` selects the sort property. |
+| `keyword`            | String  | No       | -                                    | Job title, nursing specialty, or search phrase. Overrides `startUrl`.                                                                                      |
+| `location`           | String  | No       | -                                    | City, state, or ZIP code. Overrides `startUrl`. Combine with `keyword` to narrow the search.                                                               |
+| `results_wanted`     | Integer | No       | `20`                                 | Maximum number of unique jobs to save. Must be at least 1.                                                                                                 |
+| `max_pages`          | Integer | No       | `20`                                 | Maximum number of result pages to request. Must be at least 1.                                                                                             |
+| `proxyConfiguration` | Object  | No       | `{"useApifyProxy": false}`           | Optional Apify proxy settings for request routing.                                                                                                         |
 
-The keyword and location values shown in the schema are Console prefills, not runtime defaults. If you submit an empty input, the Actor uses the default browse URL, no keyword filter, no location filter, a result limit of 20, and a page limit of 20.
+## Output Data
+
+| Field                       | Type    | Description                  |
+| --------------------------- | ------- | ---------------------------- |
+| `id`                        | String  | Job identifier.              |
+| `slug`                      | String  | Job slug.                    |
+| `url`                       | String  | Public listing URL.          |
+| `title`                     | String  | Job title.                   |
+| `description_html`          | String  | Source description HTML.     |
+| `description_text`          | String  | Plain-text description.      |
+| `status`                    | String  | Listing status.              |
+| `employmentType`            | String  | Employment type.             |
+| `shiftType`                 | String  | Shift type.                  |
+| `minYearsExp`               | Number  | Minimum years of experience. |
+| `hasExternalApplicationUrl` | Boolean | External application flag.   |
+| `displayCompanyName`        | String  | Displayed company name.      |
+| `payLow`                    | Number  | Lower pay value.             |
+| `payHigh`                   | Number  | Upper pay value.             |
+| `payType`                   | String  | Pay period or type.          |
+| `postedAt`                  | String  | Posting timestamp.           |
+| `updatedAt`                 | String  | Update timestamp.            |
+| `createdAt`                 | String  | Creation timestamp.          |
+| `expiresAt`                 | String  | Expiration timestamp.        |
+| `locationCity`              | String  | City.                        |
+| `locationState`             | String  | State.                       |
+| `organizationName`          | String  | Employer name.               |
+| `location`                  | Object  | Nested location values.      |
+| `organization`              | Object  | Nested organization values.  |
+| `qualifications`            | Array   | Qualification entries.       |
+| `query`                     | Object  | Search context for the item. |
+| `source`                    | String  | Source name.                 |
+| `crawledAt`                 | String  | Collection timestamp.        |
 
 ## Usage Examples
 
-### Basic Nurse.com job collection
+### Collect jobs by keyword
 
-Collect up to 20 jobs from the default Nurse.com browse page.
+Collect up to 20 ICU jobs from anywhere on Nurse.com.
 
 ```json
 {
-  "startUrl": "https://www.nurse.com/jobs/browse/",
-  "results_wanted": 20,
-  "max_pages": 1
+    "keyword": "icu",
+    "results_wanted": 20,
+    "max_pages": 1
 }
 ```
 
-### Keyword and location search
+### Collect jobs by keyword and location
 
-Collect ICU-related jobs for a specific location, with a larger result and page limit.
+Narrow the search to a city and request more results across several pages.
 
 ```json
 {
-  "keyword": "icu",
-  "location": "Texas",
-  "results_wanted": 50,
-  "max_pages": 5
+    "keyword": "registered nurse",
+    "location": "Texas",
+    "results_wanted": 100,
+    "max_pages": 5
 }
 ```
 
-### Start from a specific browse page and URL filter
+### Start from a browse URL
 
-Start at a later browse page and carry a Nurse.com JSON search filter in the URL. The URL filter is decoded by the Actor; `keyword` or `location` inputs would override matching values.
+Use a saved browse URL with a page, a sort property, and a JSON filter. The Actor reads those values when `keyword` and `location` are empty.
 
 ```json
 {
-  "startUrl": "https://www.nurse.com/jobs/browse/page-2/?s=updatedAt&q=%7B%22searchText%22%3A%22rn%22%7D",
-  "results_wanted": 40,
-  "max_pages": 4
+    "startUrl": "https://www.nurse.com/jobs/browse/page-2/?s=updatedAt&q=%7B%22searchText%22%3A%22rn%22%7D",
+    "results_wanted": 40,
+    "max_pages": 4
 }
 ```
 
 ## Sample Output
 
-The following is one representative dataset item. Optional fields are absent when Nurse.com does not provide a value.
-
 ```json
 {
-  "id": "c307cfb1-faf2-4cbc-a6ea-de71cbd05c1a",
-  "slug": "rn-clinical-nurse-ii-lactation-consultant-nicu-and-pediatric-cardiac-icu",
-  "url": "https://www.nurse.com/jobs/rn-clinical-nurse-ii-lactation-consultant-nicu-and-pediatric-cardiac-icu/c307cfb1-faf2-4cbc-a6ea-de71cbd05c1a/",
-  "title": "RN Clinical Nurse II Lactation Consultant NICU and Pediatric Cardiac ICU",
-  "description_html": "<p>Provides competent clinical nursing care...</p>",
-  "description_text": "Provides competent clinical nursing care...",
-  "status": "ACTIVE",
-  "employmentType": "FULL_TIME",
-  "shiftType": "DAY",
-  "minYearsExp": 0,
-  "hasExternalApplicationUrl": true,
-  "organizationName": "UNC Health",
-  "locationCity": "Chapel Hill",
-  "locationState": "NC",
-  "location": {
-    "city": "Chapel Hill",
-    "state": "NC",
-    "lat": 35.9131996,
-    "lon": -79.0558445
-  },
-  "organization": {
-    "name": "UNC Health",
-    "premium": true
-  },
-  "qualifications": [
-    {
-      "name": "ICU",
-      "type": "specialty"
-    }
-  ],
-  "query": {
-    "keyword": "icu",
-    "location": "New York",
-    "page": 0
-  },
-  "source": "nurse.com",
-  "crawledAt": "2026-03-31T14:50:00.000Z"
+    "id": "8a032086-d7d5-44e3-9262-cff31a01b051",
+    "slug": "rn---emergency-services---located-in-klamath-falls-or",
+    "url": "https://www.nurse.com/jobs/rn---emergency-services---located-in-klamath-falls-or/8a032086-d7d5-44e3-9262-cff31a01b051/",
+    "title": "RN - Emergency Services",
+    "description_html": "<p>Provides competent clinical nursing care...</p>",
+    "description_text": "Provides competent clinical nursing care...",
+    "status": "ACTIVE",
+    "employmentType": "FULL_TIME",
+    "shiftType": "DAY",
+    "minYearsExp": 0,
+    "hasExternalApplicationUrl": true,
+    "payType": "HOURLY",
+    "postedAt": "2026-10-27T10:21:25.887495Z",
+    "updatedAt": "2026-10-30T10:29:15.010675947Z",
+    "createdAt": "2026-10-27T10:21:25.857572Z",
+    "expiresAt": "2026-11-26T10:21:25.889286Z",
+    "locationCity": "Klamath Falls",
+    "locationState": "OR",
+    "organizationName": "Global Medical Response",
+    "location": {
+        "city": "Klamath Falls",
+        "state": "OR",
+        "lat": 42.224867,
+        "lon": -121.7816704
+    },
+    "organization": {
+        "id": "70987480-d225-47a5-b773-337506311d86",
+        "name": "Global Medical Response",
+        "premium": false
+    },
+    "qualifications": [
+        {
+            "name": "Critical Care",
+            "type": "specialty"
+        },
+        {
+            "name": "Registered Nurse (RN)",
+            "type": "license"
+        }
+    ],
+    "query": {
+        "keyword": "icu",
+        "page": 0
+    },
+    "source": "nurse.com",
+    "crawledAt": "2026-10-31T09:11:21.504Z"
 }
 ```
 
 ## Tips for Best Results
 
-- **Test focused searches first** - Start with one keyword, one location, and a small `results_wanted` value before expanding the run.
-- **Match the page limit to the result limit** - Increase `max_pages` when you request more jobs, while keeping both limits appropriate for the search.
-- **Use a saved browse URL for repeatable searches** - A Nurse.com browse URL can preserve a page, sort value, and JSON filter that you want to reuse.
-- **Review optional fields before analysis** - Pay, qualifications, organization details, and dates may be absent from individual listings.
-- **Check the dataset preview** - Confirm titles, locations, descriptions, and URLs before scheduling larger runs or exporting the data.
+- Start with one keyword, one location, and a small `results_wanted` value before expanding the run.
+- Set `max_pages` high enough for the result count. At 25 jobs per page, 100 results need four pages.
+- Use a saved browse URL when you want to repeat a search with the same sort order and filter.
+- Review optional fields before analysis. Pay, qualifications, organization details, and timestamps are not present on every listing.
+- Schedule the Actor for recurring runs when you need to detect new postings or changed listings.
 
 ## Data-quality behavior and limitations
 
-- Empty strings, null values, empty arrays, and empty nested objects are removed from each dataset item.
-- `description_text` is derived from `description_html` by removing markup and preserving readable line breaks. The original HTML is retained separately when available.
-- Duplicate job IDs are skipped during a run, including duplicates encountered across pages.
-- The Actor stops when it reaches the requested result count, reaches the page limit, reaches the last available page, or receives an empty page.
-- Nurse.com controls which jobs and fields are available. A listing may omit pay, organization, qualification, date, address, or application information.
-- Pay values are not converted, rounded, or assigned a currency by the Actor.
-- The Actor is intended for Nurse.com jobs browse URLs and does not expose separate inputs for employment type, shift type, pay range, specialty, or license filters. Such filters are not documented as standalone Actor options.
-- The public source can change. A changed page, unavailable listing, or temporary access issue can reduce the number of returned items or require a later retry.
+- Empty strings, null values, empty arrays, and empty nested objects are removed from each item.
+- Duplicate job IDs are skipped across all pages in a run.
+- `description_text` is derived from `description_html` with markup removed. The original HTML stays in a separate field.
+- The Actor stops at the requested result count, the page limit, the last page, or an empty page.
+- Nurse.com controls which jobs and fields are available. A listing may omit pay, organization, qualification, date, or address values.
+- The Actor is intended for Nurse.com jobs pages. It does not expose separate inputs for employment type, shift, pay range, or license filters.
+- Public sites change over time. If a run returns fewer jobs than expected, check the dataset preview and the run log before starting a larger run.
 
 ## Integrations and exports
 
-Apify datasets can be used with common research and hiring workflows:
-
-- **JSON, CSV, Excel, and XML** - Download the collected jobs in formats suited to code, spreadsheets, or system imports.
-- **Apify API** - Read dataset items programmatically after a run.
-- **Google Sheets** - Move job records into a spreadsheet for review and analysis.
-- **Webhooks** - Trigger a downstream workflow when a run finishes.
-- **Make or Zapier** - Connect the dataset to no-code automation where supported by your Apify setup.
+- **Google Sheets** - Send job records to a spreadsheet for review.
+- **Webhooks** - Start a downstream process when a run finishes.
+- **Make or Zapier** - Connect the dataset to a no-code workflow.
+- **Apify API** - Read dataset items from your own application.
+- **CSV, Excel, JSON, and XML** - Export the dataset in the format your tools accept.
 
 ## Frequently Asked Questions
 
 ### Can I search by nursing specialty or job title?
 
-Yes. Set `keyword` to a term such as `icu`, `registered nurse`, or another search phrase accepted by Nurse.com.
+Yes. Set `keyword` to a term such as `icu`, `registered nurse`, or `emergency department`.
 
 ### Can I filter by location?
 
-Yes. Set `location` to a city, state, or ZIP code. When both `keyword` and `location` are provided, both values are applied to the collection filter.
+Yes. Set `location` to a city, state, or ZIP code. When you provide both `keyword` and `location`, the Actor applies both filters.
 
 ### Can I use a custom Nurse.com browse URL?
 
-Yes. Set `startUrl` to a Nurse.com jobs browse URL. The Actor also reads a page number, sort property, and JSON filter when they are present in the URL.
+Yes. Set `startUrl` to a Nurse.com jobs browse URL. The Actor reads a page path such as `/page-2/`, a sort property in `s`, and a JSON filter in `q`. A `keyword` or `location` input overrides the URL search.
 
 ### How many jobs can one run collect?
 
-The run is limited by both `results_wanted` and `max_pages`. The Actor also stops when Nurse.com returns no more jobs or reports the last page.
+A run is limited by both `results_wanted` and `max_pages`. The Actor also stops at the last page Nurse.com reports.
 
 ### Why are some output fields missing?
 
-Fields are missing when the source listing does not provide them. Empty values are removed from the output so records contain only available data.
+A field is missing when the source listing does not provide it. Empty values are removed so each record contains only available data.
 
-### Can I export Nurse.com jobs to CSV or Excel?
+### Can I export the data to CSV or Excel?
 
-Yes. Download the Apify dataset as CSV, Excel, JSON, XML, or another supported dataset format.
+Yes. Apify datasets can be downloaded as CSV, Excel, JSON, XML, or another supported format.
+
+### Can I run the Actor on a schedule?
+
+Yes. Create a schedule in Apify Console and choose how often the Actor should start. Each run adds a new dataset that you can compare with earlier runs.
 
 ### Is it legal to collect Nurse.com job data?
 
-You are responsible for complying with Nurse.com's terms, applicable privacy requirements, and all laws that apply to your intended use of public job data. Use the Actor for legitimate research, recruiting, and analysis workflows.
+You are responsible for complying with Nurse.com terms, privacy rules, and the laws that apply to your use of public job data. Use the Actor for legitimate research, recruiting, and analysis.
 
 ## Related Actors
 
@@ -237,8 +274,8 @@ You are responsible for complying with Nurse.com's terms, applicable privacy req
 
 ## Support
 
-For issues or feature requests, use the Issues tab on the Actor page and include the input used, the run ID, and an example of the unexpected output when possible.
+For issues or feature requests, use the Issues tab on the Actor page and include the input you used, the run ID, and an example of the unexpected output.
 
 ## Legal Notice
 
-This Actor is intended for lawful collection and analysis of publicly available job information. You are responsible for complying with Nurse.com's terms of use, privacy requirements, copyright rules, and other applicable regulations.
+This Actor is intended for lawful collection and analysis of publicly available job information. You are responsible for complying with Nurse.com terms of use, privacy requirements, copyright rules, and other applicable regulations.
