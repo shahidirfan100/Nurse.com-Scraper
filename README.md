@@ -220,6 +220,7 @@ Use a saved browse URL with a page, a sort property, and a JSON filter. The Acto
 - Duplicate job IDs are skipped across all pages in a run.
 - `description_text` is derived from `description_html` with markup removed. The original HTML stays in a separate field.
 - The Actor stops at the requested result count, the page limit, the last page, or an empty page.
+- If Nurse.com is temporarily unavailable, the Actor retries both request paths and finishes with the jobs collected so far instead of failing the run. A run that collects nothing ends with a warning and a status message.
 - Nurse.com controls which jobs and fields are available. A listing may omit pay, organization, qualification, date, or address values.
 - The Actor is intended for Nurse.com jobs pages. It does not expose separate inputs for employment type, shift, pay range, or license filters.
 - Public sites change over time. If a run returns fewer jobs than expected, check the dataset preview and the run log before starting a larger run.

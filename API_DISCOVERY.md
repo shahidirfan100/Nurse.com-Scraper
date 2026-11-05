@@ -1,189 +1,170 @@
-# API Discovery - Nurse.com Jobs
+# API Discovery: Nurse.com Jobs
 
-Last verified: 2026-10-31
+Last verified: 2026-11-05
+
+This file is the first stop when the actor fails. It records the request that
+currently returns job data, the fallback route, and the checks that separate a
+source outage from an actor bug.
 
 ## Current site shape
 
-- Nuxt 3 server-rendered application. The browse page carries hydration data in
-  `<script id="__NUXT_DATA__">` as a devalue payload.
-- The public site is fronted by Akamai. Requests without a real browser TLS
-  fingerprint receive `403 Access Denied` with a short Akamai error page.
-- The previous note describing Cloudflare protection was outdated. The previous
-  feed endpoint below is still live.
+- Nurse.com is a Nuxt 3 application served through Akamai.
+- The browse page (`https://www.nurse.com/jobs/browse/`) is client rendered for
+  job results. Its `__NUXT_DATA__` payload now carries navigation, filter
+  options, and page errors, but no job list.
+- The Nuxt server route `POST /jobs/api/jobs/job-detail` proxies the search to
+  `https://production.nurse.com`. During verification it returned HTTP 500
+  (`[POST] "/jobs/api/jobs/job-detail": 500 Error Encountered`).
+- The public GraphQL service behind that route answers directly:
+  `https://super-api.nurse.com/graphql`.
 
 ## Selected API (primary)
 
+- Endpoint: `https://super-api.nurse.com/graphql`
+- Method: `POST`
+- Auth: none for anonymous search.
+- Content type: `application/json`.
+- Introspection: disabled. Field discovery below was done through validation
+  errors returned by the service.
+- Transport: direct HTTP with impit. No cookies or browser session required.
+- Profile compatibility: `chrome`, `chrome151`, `chrome142`, `chrome136`,
+  `firefox`, `firefox158`, and `ios18` all returned HTTP 200 with job data.
+  `okhttp5` and `okhttp4` were rejected with an Akamai `403 Access Denied`.
+
+### Verified query
+
+```graphql
+query JobSearch($filter: JobSearchInput, $pageRequest: PageRequest) {
+  jobSearch(filter: $filter, pageRequest: $pageRequest) {
+    content {
+      id title slug status employmentType shiftType payLow payHigh payType
+      postedAt updatedAt createdAt expiresAt hasExternalApplicationUrl
+      displayCompanyName minYearsExp description
+      address { city state zipCode location { lat lon } }
+      organization { id name premium }
+      qualifications { name details type { name } }
+    }
+    page { number size totalElements totalPages first last }
+  }
+}
+```
+
+### Verified variables
+
+```json
+{
+  "filter": { "searchText": "icu" },
+  "pageRequest": {
+    "page": 0,
+    "size": 25,
+    "sort": { "property": "updatedAt", "direction": "DESC" }
+  }
+}
+```
+
+- `pageRequest.page` is zero based.
+- `pageRequest.size` accepts 1 to 100. `size: 150` returned an internal error.
+- `pageRequest.sort` is a `SortInput` object with `property` and `direction`.
+  A flat string sort is rejected.
+- Out of range pages return HTTP 200 with an empty `content` array.
+
+### JobSearchInput fields verified by the service
+
+`searchText`, `locationText`, `licenses`, `specialties`, `employmentTypes`,
+`shiftTypes`, `payLow`, `payHigh`, `favorited`, `location`, `radius`.
+
+`licenses` and `specialties` take integer ids. Passing strings returns a type
+conversion error. Pagination and sorting are not part of `JobSearchInput`.
+
+### Sort properties
+
+`createdAt`, `updatedAt`, `payHigh`, `name`, `title`, `status`,
+`organization.name`, `relevance`, `expiresAt`.
+
+### Verified behavior
+
+| Check | Result |
+| --- | --- |
+| No filter, size 25 | HTTP 200, 25 jobs, 877 total, 36 pages |
+| `searchText=icu` | HTTP 200, 25 jobs, 624 total, 25 pages |
+| `locationText=New York` | HTTP 200, 23 jobs, 1 page |
+| `searchText=icu` + `locationText=New York` | HTTP 200, matching subset |
+| `pageRequest.page=1` | HTTP 200, different first job than page 0 |
+| `pageRequest.page=50` | HTTP 200, empty content |
+| `pageRequest.size=100` | HTTP 200, 100 jobs |
+| `pageRequest.size=150` | HTTP 200 with an internal error message |
+| `sort.payHigh DESC` | HTTP 200, highest pay first |
+| `sort.updatedAt DESC` | HTTP 200 |
+| `okhttp5` profile | HTTP 403 Access Denied |
+
+### Job page URL
+
+`https://www.nurse.com/jobs/{slug}/{id}/` returned HTTP 200 and the same job
+title.
+
+## Secondary transport (legacy route)
+
 - Endpoint: `https://www.nurse.com/jobs/api/jobs/job-detail`
 - Method: `POST`
-- Auth: none for anonymous search. The browser sends
-  `Authorization: Bearer <sharedAccessToken>` where the value is `undefined`
-  for anonymous visitors. Requests succeed without the header.
-- Required headers: `content-type: application/json`. The route is a Nuxt server
-  handler, so a body without JSON content type falls through to a 404 page.
-  `accept`, `origin`, and `referer` are sent for context.
-- Pagination: `variables.page` (zero-based), `variables.size` (verified working
-  range 1 to 100; `size >= 150` returns HTTP 500). The actor uses 25 to stay
-  aligned with the rendered page pagination.
-- Sort: `variables.property`, `variables.direction`.
-- Filters: `variables.params` (`searchText`, `locationText`, `licenses`,
-  `specialties`, `employmentTypes`, `shiftTypes`, `payLow`, `favorited`).
-
-### Verified request body
-
-```json
-{
-    "variables": {
-        "direction": "DESC",
-        "size": 25,
-        "page": 0,
-        "property": "updatedAt",
-        "params": {
-            "favorited": false,
-            "searchText": "icu",
-            "locationText": null
-        },
-        "loggedIn": false
-    }
-}
-```
-
-### Verified response shape
-
-```json
-{
-    "jobs": [
-        {
-            "id": "uuid",
-            "title": "string",
-            "slug": "string",
-            "description": "html",
-            "employmentType": "FULL_TIME",
-            "shiftType": "DAY",
-            "status": "ACTIVE",
-            "payLow": 123456,
-            "payHigh": 234567,
-            "payType": "ANNUAL",
-            "postedAt": "2026-10-27T10:21:25.887495Z",
-            "updatedAt": "2026-10-30T10:29:15.010675947Z",
-            "createdAt": "2026-10-27T10:21:25.857572Z",
-            "expiresAt": "2026-11-26T10:21:25.889286Z",
-            "hasExternalApplicationUrl": true,
-            "displayCompanyName": null,
-            "minYearsExp": 0,
-            "address": {
-                "city": "Klamath Falls",
-                "state": "OR",
-                "zipCode": "",
-                "location": { "lat": 42.224867, "lon": -121.7816704 }
-            },
-            "organization": {
-                "id": "uuid",
-                "name": "Global Medical Response",
-                "premium": false
-            },
-            "qualifications": [{ "name": "Critical Care", "details": null, "type": { "name": "specialty" } }]
-        }
-    ],
-    "page": {
-        "first": true,
-        "last": false,
-        "number": 0,
-        "size": 25,
-        "totalElements": 836,
-        "totalPages": 34
-    }
-}
-```
-
-## Verified behavior
-
-| Check                                      | Result                              |
-| ------------------------------------------ | ----------------------------------- |
-| `page=0`, `1`, `2`, `5`                    | 200, 25 jobs each, no overlap       |
-| `page=100` beyond range                    | 200, empty `jobs`, `page.last=true` |
-| `searchText=icu`                           | 200, 581 total elements             |
-| `locationText=New York`                    | 200, 23 total elements              |
-| `searchText=icu` + `locationText=New York` | 200, 4 total elements               |
-| `size=1`, `50`, `100`                      | 200, honored                        |
-| `size>=150`                                | 500 JSON error                      |
-| `GET`                                      | 404 HTML page                       |
-| `POST` with `{}`                           | 404 HTML page                       |
-| `POST` without content type                | 404 HTML page                       |
-
-## Browser profile matrix (impit 0.14.8, same request)
-
-| Profile                                                                                                                                    | Status |
-| ------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| no profile                                                                                                                                 | 403    |
-| chrome, chrome100, chrome101, chrome104, chrome107, chrome110, chrome116, chrome124, chrome125, chrome131, chrome136, chrome142, chrome151 | 200    |
-| firefox, firefox128, firefox133, firefox135, firefox144, firefox158                                                                        | 200    |
-| ios18                                                                                                                                      | 200    |
-| okhttp, okhttp3, okhttp4, okhttp5                                                                                                          | 403    |
-
-The working pool used by the actor is `chrome`, `chrome151`, `chrome142`,
-`firefox`, `firefox144`, `ios18`. The pool rotates only after a failed request.
-
-## Secondary transport (rendered page)
-
-The server-rendered browse page embeds the same job list and page metadata, so
-it works as a fallback when the feed route changes or is blocked.
-
-- URL: `https://www.nurse.com/jobs/browse/` for page 0, then
-  `https://www.nurse.com/jobs/browse/page-{n}/`.
-- Filters: `?q=<url-encoded JSON>` and `?s=<sort property>`.
-- Data: `__NUXT_DATA__` script, parsed with devalue plus Nuxt revivers
-  (`ShallowReactive`, `ShallowRef`, `EmptyRef`, and similar).
-- The jobs container is located recursively by looking for an object with a
-  non-empty `jobs` array.
-
-Verified parity with the feed:
-
-| Page           | API first id   | Rendered page first id | Meta                |
-| -------------- | -------------- | ---------------------- | ------------------- |
-| 0              | `8a032086-...` | `8a032086-...`         | total 836, pages 34 |
-| 1              | `72670e29-...` | matching page 1        | total 836, pages 34 |
-| 2              | -              | matching page 2        | total 836, pages 34 |
-| filtered `icu` | -              | same list              | total 581, pages 24 |
-
-The rendered page path uses the same zero-based page index as the feed. Page
-sizes differ internally (25 per rendered page), which is why the actor requests
-25 items per feed page.
-
-## External cross-check
-
-A public Apify actor at `https://apify.com/alexist/nurse-jobs-search-scraper`
-lists the same browse-page URLs (`/jobs/browse/page-1/`, `/jobs/browse/page-2/`)
-and publishes records with the same keys found in the hydration payload
-(`address.location`, `pay_type`, `min_years_exp`, `qualifications[].type.name`).
-That confirms the rendered page carries the full job list and that a browser is
-not required to obtain it.
+- Body: `{ "variables": { direction, size, page, property, params, loggedIn } }`
+- Headers seen in the browser: `content-type: application/json`,
+  `accept: application/json`, `authorization: Bearer undefined`.
+- Response shape: `{ "jobs": [...], "page": {...} }`.
+- During verification this route returned HTTP 500 because its upstream proxy
+  failed while the direct GraphQL endpoint stayed healthy. The actor keeps it as
+  a fallback for the case where the public GraphQL host disappears or changes.
 
 ## Failure classification used by the actor
 
-- `403`, `408`, `425`, `429`, `500`, `502`, `503`, `504`: retry with another
-  browser profile, bounded exponential backoff, `Retry-After` when present.
-- `400`, `404`, `405`: permanent for that transport, switch to the rendered page.
-- Non-JSON body or missing job collection: treat as a shape change, log the
-  actual top-level keys, switch to the rendered page.
-- Empty `jobs` array: valid empty result, stop pagination without error.
-- Both transports exhausted: fail the run with a non-zero exit code.
+- `403`, `408`, `425`, `429`, `500`, `502`, `503`, `504`, timeouts, and network
+  errors: retry with bounded exponential backoff and `Retry-After` when present.
+- `403` or an Akamai `Access Denied` page: rotate to the next impit profile
+  (`chrome`, `chrome151`, `chrome142`, `firefox`, `firefox158`, `ios18`).
+- GraphQL validation error naming an undefined field: remove that field from the
+  selection set and retry, up to five fields per run.
+- Any other GraphQL error, null body, or unexpected JSON shape: mark the
+  transport as failed and try the legacy route.
+- Two consecutive failures of a transport: cool that transport down for 60
+  seconds instead of retrying it on every page.
+- Both transports exhausted: finish with the jobs collected so far. If nothing
+  was collected, the run completes with a warning and a status message.
+- Unexpected internal errors: fail the run with a non-zero exit code.
 
-Akamai sets an `AKA_A2` cookie on rendered-page responses. Each impit client
-keeps its own cookie jar so a session stays coherent if the edge starts requiring
-that cookie on feed requests. A profile rotation creates a fresh cookie jar.
+## Resilience behavior
 
-## Why the old notes were replaced
+- No hardcoded tokens or cookies. The actor only sends endpoint headers the
+  service expects and lets impit generate browser-consistent headers.
+- One impit client per browser profile, reused across pages.
+- Profiles rotate only after a block, timeout, or transport error, so a healthy
+  run stays on one coherent fingerprint.
+- Response parsing is shape tolerant for `content` and `jobs` collections and
+  for `page`, `pagination`, and `pageInfo` metadata.
+- Pages are spaced with a short jittered delay.
+- The first page has a 3 minute budget, later pages 90 seconds, and the run has
+  a 15 minute collection budget.
+- If the first page fails with the configured sort, the actor retries once with
+  `createdAt` (or `updatedAt` when `createdAt` was already in use).
 
-- `Cloudflare` no longer describes the edge. Akamai returns the block page.
-- The old actor required a browser (Playwright Firefox) to call the feed. A
-  browser profile in impit is sufficient, so the browser dependency is gone.
-- The old schema prefilled every field, which fails the Apify Store health-test
-  convention and mixes search modes. The new schema keeps one prefill and one
-  matching default on `startUrl` only.
+## Troubleshooting checklist
+
+1. Read this file first.
+2. Run the actor with `keyword: "icu"`, `results_wanted: 1` and check the log.
+3. If the log says `GraphQL feed failed`, test the endpoint with the query and
+   variables above. A `400` with a validation message means the schema changed.
+4. A `403 Access Denied` body means the edge rejected the fingerprint. Check the
+   profile list against the installed impit version and add the current profiles.
+5. A `500` or internal error with `size` above 100 means the page size cap
+   changed. Keep the actor at 25.
+6. If `jobSearch` is gone or renamed, the legacy route may still work. If both
+   are gone, the site moved its search again and this file needs a new discovery
+   pass.
+7. Never hardcode a token or a captured cookie as a fix. Replay the request that
+   the site itself makes.
 
 ## Acceptance checks
 
-- `npm start` with keyword `icu`: non-empty dataset, no browser process.
-- Forced feed failure: rendered page returns the same jobs and pagination.
-- Forced total failure: exit code 1 with a clear error message.
-- `npm run lint`: zero errors.
+- `npm start` with keyword `icu`: non-empty dataset, one job per listing.
+- Default input (browse URL only): non-empty dataset within five minutes.
+- Pagination: `results_wanted: 30`, `max_pages: 2` saves 30 unique jobs.
+- Filters: keyword, location, and combined searches return different totals.
+- `npm run lint` and `npm test`: zero errors.

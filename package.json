@@ -4,11 +4,9 @@
     "description": "Collects nursing job listings from Nurse.com with keyword, location, and browse page searches.",
     "type": "module",
     "dependencies": {
-        "apify": "^3.7.2",
+        "apify": "^3.7.0",
         "cheerio": "^1.2.0",
-        "devalue": "^6.0.3",
-        "impit": "^0.14.8",
-        "tough-cookie": "^6.0.2"
+        "impit": "^0.14.8"
     },
     "devDependencies": {
         "@apify/eslint-config": "^2.0.6",
@@ -22,7 +20,7 @@
         "format:check": "prettier --check .",
         "lint": "eslint",
         "lint:fix": "eslint --fix",
-        "test": "echo \"Error: oops, the Actor has no tests yet, sad!\" && exit 1"
+        "test": "node --test"
     },
     "author": "Shahid Irfan",
     "license": "ISC"
